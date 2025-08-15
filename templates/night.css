@@ -1,0 +1,16 @@
+/* Template Dark (Night) */
+    .template-night .cv-page{ background:#0f172a; color:#e5e7eb; }
+    .template-night .cv-section h3{ border-color:#334155; }
+    .template-night .cv-accent{ color:#93c5fd; }
+    .template-night .cv-meta{ color:#94a3b8; }
+    .template-night .cv-head{ border-radius:12px; padding:12px; background:#111827; border:1px solid #374151; margin-bottom:10px; }
+    .template-night .chip{ background:#1f2937; border-color:#374151; color:#e5e7eb; }
+
+    .footer-note{ text-align:center; font-size:12px; color:var(--muted); padding:8px; }
+    .locked-mask{ position:fixed; inset:0; background:rgba(15,23,42,.7); display:flex; align-items:center; justify-content:center; z-index:50; }
+    .dialog{ width:min(680px, 92vw); background:#fff; color:#111827; border-radius:16px; border:1px solid var(--border); box-shadow: var(--shadow); padding:20px; }
+    .dialog h3{ margin:0 0 8px 0; }
+    .dialog .row{ grid-template-columns: 1fr 1fr; }
+    .kbd{ font-family:var(--font-mono); background:#0f172a; color:#f1f5f9; border-radius:8px; padding:6px 8px; display:inline-block; }
+
+    .hidden{ display:none !important; }

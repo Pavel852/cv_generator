@@ -1,0 +1,1383 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>PB CV Generator v1.0.3 — CZ/EN</title>
+  <meta name="description" content="Bilingvní (CZ/EN) generátor životopisu s online náhledem, vědeckou sekcí a PDF exportem (3 šablony). Autor PB (c) 2025."/>
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --bg-2:#ffffff;
+      --fg:#1b1f24;
+      --muted:#6b7280;
+      --accent:#2563eb;
+      --accent-2:#0ea5e9;
+      --accent-3:#10b981;
+      --danger:#ef4444;
+      --border:#e5e7eb;
+      --shadow:0 10px 32px rgba(0,0,0,.06);
+      --radius:16px;
+      --radius-sm:12px;
+      --radius-lg:22px;
+      --font-sans: ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      --font-serif: ui-serif, Georgia, "Times New Roman", Times, serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:var(--font-sans);
+      color:var(--fg);
+      background:radial-gradient(1200px 800px at 10% -10%, #eef2ff 0%, transparent 60%), linear-gradient(180deg, #fbfdff 0%, var(--bg) 100%);
+    }
+    .container{ max-width:1280px; margin:0 auto; padding:20px; }
+    .appbar{ display:flex; gap:16px; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .brand{display:flex; align-items:center; gap:10px;}
+    .brand .logo{ width:36px;height:36px; border-radius:12px; background:linear-gradient(135deg, var(--accent), #7c3aed); box-shadow: var(--shadow); }
+    .brand h1{font-size:18px; margin:0;}
+    .app-actions{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+    .pill{
+      display:inline-flex; align-items:center; gap:6px; padding:10px 14px; border-radius:12px;
+      background:var(--bg-2); border:1px solid var(--border); box-shadow: var(--shadow);
+      font-size:14px;
+    }
+    .pill select, .pill input[type="text"]{border:none; outline:none; background:transparent; font-size:14px;}
+    .btn{
+      border:none; background:var(--accent); color:white; padding:12px 16px; border-radius:12px; cursor:pointer;
+      box-shadow: var(--shadow); font-weight:700; font-size:14px; letter-spacing:.2px;
+    }
+    .btn.secondary{ background:var(--accent-3); }
+    .btn.ghost{ background:transparent; color:var(--accent); border:1px solid var(--accent); }
+    .btn.warn{ background:var(--danger); }
+    .row{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+    @media (max-width: 980px){ .row{ grid-template-columns:1fr; } }
+    .card{
+      background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius);
+      box-shadow: var(--shadow); padding:16px;
+    }
+    .card h2{margin:0 0 6px 0; font-size:16px;}
+    .muted{color:var(--muted); font-size:12px;}
+    .toolbar{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0 12px;}
+    .warning{
+      padding:10px 12px; border:1px dashed #f59e0b; background:#fffbeb; border-radius:10px; font-size:13px;
+    }
+
+    /* Form layout */
+    form .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    form .grid-3{ display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;}
+    form .grid-4{ display:grid; grid-template-columns:repeat(4, 1fr); gap:12px;}
+    @media (max-width: 980px){ form .grid, form .grid-3, form .grid-4{ grid-template-columns:1fr; } }
+    label{ font-size:12px; color:var(--muted); display:block; margin:6px 2px; }
+    input[type="text"], input[type="email"], input[type="url"], input[type="tel"], input[type="month"], textarea, select{
+      width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:12px; background:#fff; font-size:14px; outline:none;
+    }
+    textarea{ min-height:90px; resize:vertical; }
+
+    /* Repeaters */
+    .repeater{ display:flex; flex-direction:column; gap:8px; }
+    .item{ position:relative; border:1px solid var(--border); border-radius:12px; padding:12px; background:#fff; }
+    .item .handle{ position:absolute; top:10px; right:10px; cursor:grab; font-size:18px; user-select:none; }
+    .item.dragging{ opacity:.7; border-color:var(--accent); }
+    .item .remove{ position:absolute; bottom:10px; right:10px; font-size:12px; }
+    .addline{ display:inline-flex; align-items:center; gap:6px; padding:8px 10px; border:1px dashed var(--accent);
+      border-radius:10px; background:#f8fafc; font-size:13px; cursor:pointer; }
+
+    /* Photo drop */
+    .photo-drop{ border:2px dashed var(--border); border-radius:12px; padding:14px; text-align:center; background:#fafafa; }
+    .photo-drop.dragover{ background:#eef2ff; border-color:var(--accent); }
+    .photo-preview{ width:120px; height:120px; border-radius:12px; object-fit:cover; display:block; margin:8px auto 0; border:1px solid var(--border); }
+
+    /* Preview + Templates */
+    .preview-wrap{ background:#fff; border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow: var(--shadow); }
+    .preview-toolbar{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 12px; background:#f8fafc; }
+    .preview{ padding:0; margin:0; background:#fff; }
+    .cv-page{
+      width:210mm; min-height:297mm; padding:18mm 16mm; margin:0 auto;
+      background:#fff; color:#111827;
+      font-size:12.25px; line-height:1.45; word-break:break-word; hyphens:auto;
+    }
+    .cv-page .name{ font-size:24px; font-weight:800; letter-spacing:.2px; margin-bottom:4px; }
+    .cv-page .subtitle{ color:#6b7280; margin-bottom:10px; }
+    .cv-section{ margin:16px 0; }
+    .cv-section h3{
+      font-size:12.5px; letter-spacing:.6px; text-transform:uppercase; margin:0 0 8px 0; padding-bottom:6px; border-bottom:1px solid #e5e7eb;
+    }
+    .cv-two-col{ display:grid; grid-template-columns: 33% 1fr; gap:14px; }
+    .cv-list{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; }
+    .cv-item-title{ font-weight:700; }
+    .cv-meta{ color:#6b7280; font-size:12px; }
+    .chip{ display:inline-block; border:1px solid #e5e7eb; border-radius:999px; padding:6px 10px; margin:2px 6px 2px 0; font-size:12px; background:#fff; }
+
+    /* moved:templates/classic.css */
+/* moved:templates/elegant.css */
+/* moved:templates/night
+/* === PB custom: A4 preview zoom, tag inputs, photo crop === */
+.preview{ overflow:auto; background:#f8fafc; }
+.preview .cv-page{ transform: scale(var(--preview-zoom, 1)); transform-origin: top left; }
+.preview-wrap{ --preview-zoom: 1; }
+
+/* Tag input */
+.tags-editor{ margin:8px 0 10px; }
+.tags-input{ display:flex; flex-wrap:wrap; gap:6px; padding:8px; min-height:42px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:text; }
+.tags-input input{ border:none; outline:none; min-width:120px; font-size:13px; padding:6px 4px; }
+.tag{ display:inline-flex; align-items:center; gap:6px; padding:6px 8px; border:1px solid #e5e7eb; border-radius:999px; background:#f3f4f6; font-size:12px; }
+.tag button{ appearance:none; border:none; background:transparent; cursor:pointer; font-size:12px; line-height:1; }
+
+.suggestions{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.suggestion{ display:inline-flex; align-items:center; padding:6px 8px; border:1px dashed #cbd5e1; border-radius:999px; background:#ffffff; font-size:12px; cursor:grab; }
+.suggestion:active{ cursor:grabbing; }
+
+/* Photo preview keeps proportions */
+.photo-preview{ object-fit: cover; object-position: center; }
+
+/* Hide empty headings: already handled, but ensure no stray <h3> in empty .cv-section */
+.cv-section:empty, .cv-section:empty + .cv-section h3{ display:none; }
+
+/* Utility for chips and long text auto-shrink */
+.cv-page{ --font-scale: 1; font-size: calc(12.25px * var(--font-scale)); }
+
+</style>
+<link rel="stylesheet" href="templates/classic.css"/>
+<link rel="stylesheet" href="templates/elegant.css"/>
+<link rel="stylesheet" href="templates/night.css"/>
+
+
+  <!-- Load libs (no SRI) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+<div class="container">
+  <div class="appbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <h1 id="appTitle">CV Generator v1.0.3</h1>
+    </div>
+    <div class="app-actions">
+      <div class="pill">
+        <span data-i18n="uiLanguageLabel">Jazyk rozhraní / UI language</span>
+        <select id="uiLang"><option value="cs">Česky</option><option value="en">English</option></select>
+      </div>
+      <div class="pill">
+        <span data-i18n="cvLanguageLabel">Jazyk PDF</span>
+        <select id="cvLang"><option value="cs">CZ</option><option value="en">EN</option></select>
+      </div>
+      <div class="pill">
+        <span data-i18n="templateLabel">Šablona PDF</span>
+        <select id="template">
+          <option value="template-classic">Light — Classic</option>
+          <option value="template-elegant">Light — Elegant</option>
+          <option value="template-night">Dark — Night</option>
+        </select>
+      </div>
+      <button class="btn" id="btnDownload"><span data-i18n="downloadPdf">Stáhnout PDF & uložit</span></button>
+      <button class="btn ghost" id="btnNew"><span data-i18n="newCv">Nový životopis</span></button>
+      <button class="btn ghost" id="btnUnlock"><span data-i18n="unlock">Odemknout / načíst klíčem</span></button>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Form -->
+    <div class="card">
+      <h2 data-i18n="formTitle">Formulář</h2>
+      <div class="warning" id="privacyNote">
+        <strong data-i18n="privacyHead">Upozornění:</strong>
+        <span data-i18n="privacyBody">Při generování PDF jsou neveřejně pod klíčem uložena data z životopisu. Klíč obdržíte po uložení a bez něj nebude možné pozdější editace.</span>
+      </div>
+      <form id="cvForm" autocomplete="on">
+        <section>
+          <h3 data-i18n="personalSection">Osobní údaje</h3>
+          <div class="grid">
+            <div><label data-i18n="titleBefore">Titul před jménem</label><input type="text" id="titleBefore"/></div>
+            <div><label data-i18n="titleAfter">Titul za jménem</label><input type="text" id="titleAfter"/></div>
+            <div><label data-i18n="givenNames">Jméno/jména</label><input type="text" id="givenNames" required/></div>
+            <div><label data-i18n="surname">Příjmení</label><input type="text" id="surname" required/></div>
+            <div class="grid">
+              <div><label data-i18n="address">Adresa</label><input type="text" id="address"/></div>
+              <div><label data-i18n="email">E-mail</label><input type="email" id="email"/></div>
+            </div>
+            <div class="grid">
+              <div><label data-i18n="website">Web</label><input type="url" id="website" placeholder="https://"/></div>
+              <div>
+                <label data-i18n="phones">Telefon(telefony)</label>
+                <div class="repeater" id="phones"></div>
+                <button type="button" class="addline" data-add="phones">+ <span data-i18n="addPhone">Přidat telefon</span></button>
+              </div>
+            </div>
+            <div>
+              <label data-i18n="photo">Fotka (drag & drop nebo klikněte)</label>
+              <div class="photo-drop" id="photoDrop" tabindex="0">
+                <div data-i18n="dropPhoto">Přesuňte sem soubor .jpg/.png nebo klikněte</div>
+                <img id="photoPreview" class="photo-preview hidden" alt="photo preview"/>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h3 data-i18n="summarySection">Profil / Shrnutí</h3>
+          <textarea id="summary" placeholder="Stručně představte svou zkušenost a cíle."></textarea>
+        </section>
+
+        <section>
+          <h3 data-i18n="researchSection">Vědecká sekce</h3>
+          <div class="muted" data-i18n="researchHint">Zaměřte se na publikace (knihy, články), patenty, granty/projekty a výzkumné zájmy.</div>
+          <label data-i18n="researchInterests">Výzkumné zájmy (oddělené čárkou)</label>
+          <input type="text" id="researchInterests" placeholder="např. strojové učení, matematické modelování"/>
+          
+          <h4 data-i18n="publications">Publikace</h4>
+          <div class="repeater" id="pubs"></div>
+          <button type="button" class="addline" data-add="pubs">+ <span data-i18n="addPublication">Přidat publikaci</span></button>
+
+          <h4 data-i18n="grantsProjects">Granty & projekty</h4>
+          <div class="repeater" id="grants"></div>
+          <button type="button" class="addline" data-add="grants">+ <span data-i18n="addGrant">Přidat grant/projekt</span></button>
+        </section>
+
+        <section>
+          <h3 data-i18n="workExp">Praxe</h3>
+          <div class="repeater" id="jobs"></div>
+          <button type="button" class="addline" data-add="jobs">+ <span data-i18n="addJob">Přidat pracovní zkušenost</span></button>
+        </section>
+
+        <section>
+          <h3 data-i18n="education">Vzdělání</h3>
+          <div class="repeater" id="edu"></div>
+          <button type="button" class="addline" data-add="edu">+ <span data-i18n="addEdu">Přidat vzdělání</span></button>
+        </section>
+
+        <section>
+          <h3 data-i18n="skills">Dovednosti</h3>
+          <div class="repeater" id="skills"></div>
+          <button type="button" class="addline" data-add="skills">+ <span data-i18n="addSkill">Přidat dovednost</span></button>
+<div class="tags-editor">
+  <label data-i18n="tags_skill_label">Dovednosti – rychlý vstup (piš a potvrď čárkou/Enterem; pro hvězdičky napiš např. "Python 4" nebo přidej "★★★★")</label>
+  <div id="skillTags" class="tags-input" data-target="skills"><input id="skillTagsInput" type="text" placeholder="např. Python 4, Excel 3"/></div>
+  <div class="suggestions" id="skillSuggestions" aria-label="Návrhy dovedností"></div>
+</div>
+
+        </section>
+
+        <section>
+          <h3 data-i18n="languages">Jazyky</h3>
+          <div class="repeater" id="langs"></div>
+          <button type="button" class="addline" data-add="langs">+ <span data-i18n="addLang">Přidat jazyk</span></button>
+<div class="tags-editor">
+  <label data-i18n="tags_lang_label">Jazyky – rychlý vstup (piš a potvrď čárkou nebo Enterem, případně přetáhni návrh níže)</label>
+  <div id="langTags" class="tags-input" data-target="langs"><input id="langTagsInput" type="text" placeholder="např. Čeština C2, Angličtina B2"/></div>
+  <div class="suggestions" id="langSuggestions" aria-label="Návrhy jazyků"></div>
+</div>
+
+        </section>
+
+        <section>
+          <h3 data-i18n="certs">Certifikáty</h3>
+          <div class="repeater" id="certs"></div>
+          <button type="button" class="addline" data-add="certs">+ <span data-i18n="addCert">Přidat certifikát</span></button>
+<div class="tags-editor">
+  <label data-i18n="tags_cert_label">Certifikáty – rychlý vstup (čárka/Enter vytváří štítek; lze přetáhnout návrhy níže)</label>
+  <div id="certTags" class="tags-input" data-target="certs"><input id="certTagsInput" type="text" placeholder="např. Řidičák B, Motorka A"/></div>
+  <div class="suggestions" id="certSuggestions" aria-label="Návrhy certifikátů"></div>
+</div>
+
+        </section>
+
+        <section>
+          <h3 data-i18n="awards">Ocenění</h3>
+          <div class="repeater" id="awards"></div>
+          <button type="button" class="addline" data-add="awards">+ <span data-i18n="addAward">Přidat ocenění</span></button>
+        </section>
+
+        <section>
+          <h3 data-i18n="refs">Reference</h3>
+          <div class="repeater" id="refs"></div>
+          <button type="button" class="addline" data-add="refs">+ <span data-i18n="addRef">Přidat referenci</span></button>
+        </section>
+
+        <section>
+          <h3 data-i18n="extras">Další</h3>
+          <label data-i18n="hobbies">Zájmy (oddělené čárkou)</label>
+          <input type="text" id="hobbies"/>
+          <label data-i18n="social">Sociální profily (ORCID, Google Scholar, LinkedIn...; oddělené čárkou)</label>
+          <input type="text" id="social"/>
+          <label data-i18n="gdpr">Souhlas se zpracováním osobních údajů (GDPR)</label>
+          <textarea id="gdprConsent">Souhlasím se zpracováním osobních údajů pro účely výběrového řízení.</textarea>
+        </section>
+      </form>
+      <div class="footer-note">PB (c) 2025 • v1.0.3</div>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-wrap">
+      <div class="preview-toolbar">
+        <div class="muted" id="statusText">Preview • A4</div>
+        
+<div class="toolbar-zoom" style="display:flex; align-items:center; gap:6px;">
+  <label for="previewZoom" class="muted" data-i18n="zoomLabel">Zoom</label>
+  <select id="previewZoom">
+    <option value="0.8" selected>80%</option>
+    <option value="1">100%</option>
+    <option value="1.25">125%</option>
+    <option value="1.5">150%</option>
+    <option value="2">200%</option>
+  </select>
+</div>
+
+        <div class="muted"><span data-i18n="dragInfo">Sekce i položky můžete přeuspořádat tažením (drag & drop).</span></div>
+      </div>
+      <div id="preview" class="preview template-classic">
+        <div class="cv-page" id="cvPage"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Unlock / Key dialog -->
+<div class="locked-mask hidden" id="lockOverlay" aria-modal="true" role="dialog">
+  <div class="dialog">
+    <h3 data-i18n="lockTitle">Odemknout / vytvořit</h3>
+    <p class="muted" data-i18n="lockInfo">Pro úpravu existujícího životopisu zadejte klíč. Nebo začněte nový.</p>
+    <div class="toolbar">
+      <input class="pill" type="text" id="editKeyInput" placeholder="Zadejte klíč pro editaci"/>
+      <button class="btn" id="btnLoadByKey"><span data-i18n="unlock">Odemknout</span></button>
+      <button class="btn secondary" id="btnStartNew"><span data-i18n="newCv">Nový životopis</span></button>
+    </div>
+    <div class="warning">
+      <div><strong>Privacy / Soukromí</strong></div>
+      <div data-i18n="privacyBody">Při generování PDF jsou neveřejně pod klíčem uložena data z životopisu. Klíč obdržíte po uložení a bez něj nebude možné pozdější editace.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Key shown after save -->
+<div class="locked-mask hidden" id="keyOverlay" aria-modal="true" role="dialog">
+  <div class="dialog">
+    <h3 data-i18n="yourKey">Váš klíč k editaci</h3>
+    <p class="muted" data-i18n="keyInfo">Uložte si ho. Bez klíče nelze později upravovat. Data jsou uložena neveřejně pod tímto klíčem.</p>
+    <div class="pill"><span class="kbd" id="generatedKey">—</span></div>
+    <div class="toolbar"><button class="btn" id="btnCloseKey"><span data-i18n="close">Zavřít</span></button></div>
+  </div>
+</div>
+
+<script>
+  // --- CONFIG ---
+  const APP_VERSION = "1.0.3";
+  const ENDPOINT_SAVE = "save.php";
+  const ENDPOINT_LOAD = "load.php?key=";
+
+  // Helper: load external script dynamically if needed
+  function loadScript(src){
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script"); s.src = src; s.onload = () => resolve(); s.onerror = () => reject(new Error("Failed to load " + src));
+      document.head.appendChild(s);
+    });
+  }
+  async function ensureLibsLoaded(){
+    if(!window.html2canvas){
+      await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+    }
+    if(!(window.jspdf && window.jspdf.jsPDF)){
+      await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+    }
+  }
+
+  // --- I18N dictionary ---
+  const I18N = {
+    cs: {
+      uiLanguageLabel:"Jazyk rozhraní",
+      cvLanguageLabel:"Jazyk PDF",
+      templateLabel:"Šablona PDF",
+      downloadPdf:"Stáhnout PDF & uložit",
+      newCv:"Nový životopis",
+      unlock:"Odemknout / načíst klíčem",
+
+      formTitle:"Formulář",
+      privacyHead:"Upozornění:",
+      privacyBody:"Při generování PDF jsou neveřejně pod klíčem uložena data z životopisu. Klíč obdržíte po uložení a bez něj nebude možné pozdější editace.",
+
+      dragInfo:"Sekce i položky můžete přeuspořádat tažením (drag & drop).",
+      personalSection:"Osobní údaje",
+      titleBefore:"Titul před jménem",
+      titleAfter:"Titul za jménem",
+      givenNames:"Jméno/jména",
+      surname:"Příjmení",
+      address:"Adresa",
+      email:"E-mail",
+      website:"Web",
+      phones:"Telefon(telefony)",
+      addPhone:"Přidat telefon",
+      photo:"Fotka (drag & drop nebo klikněte)",
+      dropPhoto:"Přesuňte sem soubor .jpg/.png nebo klikněte",
+
+      summarySection:"Profil / Shrnutí",
+      researchSection:"Vědecká sekce",
+      researchHint:"Zaměřte se na publikace (knihy, články), patenty, granty/projekty a výzkumné zájmy.",
+      researchInterests:"Výzkumné zájmy (oddělené čárkou)",
+
+      publications:"Publikace",
+      addPublication:"Přidat publikaci",
+      grantsProjects:"Granty & projekty",
+      addGrant:"Přidat grant/projekt",
+
+      workExp:"Praxe",
+      addJob:"Přidat pracovní zkušenost",
+      education:"Vzdělání",
+      addEdu:"Přidat vzdělání",
+
+      skills:"Dovednosti",
+      addSkill:"Přidat dovednost",
+      languages:"Jazyky",
+      addLang:"Přidat jazyk",
+      certs:"Certifikáty",
+      addCert:"Přidat certifikát",
+      awards:"Ocenění",
+      addAward:"Přidat ocenění",
+      refs:"Reference",
+      addRef:"Přidat referenci",
+
+      extras:"Další",
+      hobbies:"Zájmy (oddělené čárkou)",
+      social:"Sociální profily (ORCID, Google Scholar, LinkedIn...; oddělené čárkou)",
+      gdpr:"Souhlas se zpracováním osobních údajů (GDPR)",
+
+      lockTitle:"Odemknout / vytvořit",
+      lockInfo:"Pro úpravu existujícího životopisu zadejte klíč. Nebo začněte nový.",
+      yourKey:"Váš klíč k editaci",
+      keyInfo:"Uložte si ho. Bez klíče nelze později upravovat. Data jsou uložena neveřejně pod tímto klíčem.",
+      close:"Zavřít",
+
+      // placeholders and field labels
+      pub_type:"Typ",
+      pub_types: {book:"Kniha", article:"Vědecký článek", patent:"Patent", other:"Jiné"},
+      pub_authors:"Autoři",
+      pub_title:"Název",
+      pub_venue:"Vydavatel / časopis / číslo pat.",
+      pub_year:"Rok",
+      pub_doi:"DOI / URL",
+      pub_note:"Poznámka / abstrakt",
+
+      job_role:"Pozice",
+      job_company:"Zaměstnavatel",
+      job_city:"Město / země",
+      job_from:"Od",
+      job_to:"Do",
+      job_desc:"Popis / výsledky",
+
+      edu_degree:"Titul / stupeň",
+      edu_field:"Obor",
+      edu_school:"Instituce",
+      edu_city:"Město / země",
+      edu_from:"Od",
+      edu_to:"Do",
+      edu_thesis:"Název práce (volit.)",
+      edu_supervisor:"Vedoucí (volit.)",
+
+      skill_name:"Dovednost",
+      skill_level:"Úroveň (1-5)",
+      lang_name:"Jazyk",
+      lang_level:"Úroveň (A1-C2 / rodilý)",
+      cert_name:"Certifikát",
+      cert_org:"Vydal",
+      cert_year:"Rok",
+      award_name:"Ocenění",
+      award_org:"Udělil",
+      award_year:"Rok",
+      ref_name:"Jméno",
+      ref_contact:"Kontakt",
+
+      h_profile:"Profil",
+      h_experience:"Praxe",
+      h_education:"Vzdělání",
+      h_publications:"Publikace",
+      h_books:"Knihy",
+      h_articles:"Vědecké články",
+      h_patents:"Patenty",
+      h_projects:"Projekty & granty",
+      h_skills:"Dovednosti",
+      h_languages:"Jazyky",
+      h_certs:"Certifikáty",
+      h_awards:"Ocenění",
+      h_references:"Reference",
+      h_interests:"Zájmy",
+      h_contacts:"Kontakt",
+      h_research_interests:"Výzkumné zájmy",
+      h_social:"Profily",
+    },
+      zoomLabel:"Zvětšení",
+
+      tags_lang_label:"Jazyky – rychlý vstup (piš a potvrď čárkou nebo Enterem, případně přetáhni návrh níže)",
+
+      tags_cert_label:"Certifikáty – rychlý vstup (čárka/Enter vytváří štítek; lze přetáhnout návrhy níže)",
+
+      tags_skill_label:"Dovednosti – rychlý vstup (čárka/Enter vytváří štítek; pro hvězdičky napiš např. \"Python 4\" nebo přidej \"★★★★\")",
+
+    en: {
+      uiLanguageLabel:"UI language",
+      cvLanguageLabel:"PDF language",
+      templateLabel:"PDF template",
+      downloadPdf:"Download PDF & save",
+      newCv:"New CV",
+      unlock:"Unlock / load by key",
+
+      formTitle:"Form",
+      privacyHead:"Notice:",
+      privacyBody:"When generating the PDF, your CV data are stored privately under a secret key. You will receive the key after saving and you won't be able to edit later without it.",
+
+      dragInfo:"You can reorder sections and items via drag & drop.",
+      personalSection:"Personal details",
+      titleBefore:"Title before name",
+      titleAfter:"Title after name",
+      givenNames:"Given name(s)",
+      surname:"Surname",
+      address:"Address",
+      email:"Email",
+      website:"Website",
+      phones:"Phone(s)",
+      addPhone:"Add phone",
+      photo:"Photo (drag & drop or click)",
+      dropPhoto:"Drop .jpg/.png here or click",
+
+      summarySection:"Profile / Summary",
+      researchSection:"Research section",
+      researchHint:"Focus on publications (books, articles), patents, grants/projects and research interests.",
+      researchInterests:"Research interests (comma‑separated)",
+
+      publications:"Publications",
+      addPublication:"Add publication",
+      grantsProjects:"Grants & projects",
+      addGrant:"Add grant/project",
+
+      workExp:"Experience",
+      addJob:"Add experience",
+      education:"Education",
+      addEdu:"Add education",
+
+      skills:"Skills",
+      addSkill:"Add skill",
+      languages:"Languages",
+      addLang:"Add language",
+      certs:"Certificates",
+      addCert:"Add certificate",
+      awards:"Awards",
+      addAward:"Add award",
+      refs:"References",
+      addRef:"Add reference",
+
+      extras:"Other",
+      hobbies:"Interests (comma‑separated)",
+      social:"Profiles (ORCID, Google Scholar, LinkedIn...; comma‑separated)",
+      gdpr:"Personal data processing consent",
+
+      lockTitle:"Unlock / create",
+      lockInfo:"Enter a key to edit an existing CV. Or start a new one.",
+      yourKey:"Your edit key",
+      keyInfo:"Save it. Without the key you cannot edit later. Data are stored privately under this key.",
+      close:"Close",
+
+      pub_type:"Type",
+      pub_types: {book:"Book", article:"Article", patent:"Patent", other:"Other"},
+      pub_authors:"Authors",
+      pub_title:"Title",
+      pub_venue:"Publisher / journal / patent no.",
+      pub_year:"Year",
+      pub_doi:"DOI / URL",
+      pub_note:"Note / abstract",
+
+      job_role:"Role",
+      job_company:"Employer",
+      job_city:"City / country",
+      job_from:"From",
+      job_to:"To",
+      job_desc:"Description / achievements",
+
+      edu_degree:"Degree",
+      edu_field:"Field",
+      edu_school:"Institution",
+      edu_city:"City / country",
+      edu_from:"From",
+      edu_to:"To",
+      edu_thesis:"Thesis (optional)",
+      edu_supervisor:"Supervisor (optional)",
+
+      skill_name:"Skill",
+      skill_level:"Level (1-5)",
+      lang_name:"Language",
+      lang_level:"Level (A1-C2 / native)",
+      cert_name:"Certificate",
+      cert_org:"Issuer",
+      cert_year:"Year",
+      award_name:"Award",
+      award_org:"Issuer",
+      award_year:"Year",
+      ref_name:"Name",
+      ref_contact:"Contact",
+
+      h_profile:"Profile",
+      h_experience:"Experience",
+      h_education:"Education",
+      h_publications:"Publications",
+      h_books:"Books",
+      h_articles:"Articles",
+      h_patents:"Patents",
+      h_projects:"Projects & grants",
+      h_skills:"Skills",
+      h_languages:"Languages",
+      h_certs:"Certificates",
+      h_awards:"Awards",
+      h_references:"References",
+      h_interests:"Interests",
+      h_contacts:"Contacts",
+      h_research_interests:"Research interests",
+      h_social:"Profiles",
+    }
+  };
+
+  const state = {
+    uiLang: "cs", cvLang: "cs", template: "template-classic", key: null,
+    personal: { titleBefore:"", titleAfter:"", givenNames:"", surname:"", address:"", email:"", website:"", phones:[], photo:null },
+    summary:"", researchInterests:"",
+    publications: [], grants: [], jobs: [], edu: [], skills: [], langs: [], certs: [], awards: [], refs: [],
+    hobbies:"", social:"",
+    gdprConsent:"Souhlasím se zpracováním osobních údajů pro účely výběrového řízení.",
+    meta: { app:"PB CV Generator", version: APP_VERSION, author:"PB (c) 2025",
+      notice_cs:"Při generování PDF jsou neveřejně pod klíčem uložena data z životopisu.",
+      notice_en:"When generating the PDF, your CV data are stored privately under a secret key." }
+  };
+
+  const $ = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+
+  function t(key){
+    const lang = state.uiLang || "cs"; const dict = I18N[lang] || I18N["cs"];
+    const parts = key.split("."); let cur = dict;
+    for(const p of parts){ if(cur && typeof cur === "object" && p in cur){ cur = cur[p]; } else { return key; } }
+    return cur;
+  }
+  function applyI18N(){
+    $$("[data-i18n]").forEach(el => { const val = t(el.getAttribute("data-i18n")); if(typeof val === "string") el.textContent = val; });
+    $("#summary").placeholder = state.uiLang === "cs" ? "Stručně představte svou zkušenost a cíle." : "Briefly present your experience and goals.";
+    $("#researchInterests").placeholder = state.uiLang === "cs" ? "např. machine learning, mathematical modeling" : "e.g., machine learning, mathematical modeling";
+    $("#website").placeholder = "https://";
+    $("#editKeyInput").placeholder = state.uiLang === "cs" ? "Zadejte klíč pro editaci" : "Enter edit key";
+  }
+
+  function bindBasicInputs(){
+    $("#uiLang").addEventListener("change", e => { state.uiLang = e.target.value; 
+    // Prefill tag boxes from loaded data (names only)
+    try{
+      const langs = (data.languages||[]).map(x => x && x.name).filter(Boolean);
+      const certs = (data.certificates||[]).map(x => x && x.name).filter(Boolean);
+      const skills = (data.skills||[]).map(x => (x && x.name ? (x.name + (x.level ? (" " + x.level) : "")) : null)).filter(Boolean);
+      const langBox = $("#langTags"); const langInput = $("#langTagsInput");
+      if(langBox && langInput){ langBox.querySelectorAll(".tag").forEach(t=>t.remove()); (langs||[]).slice(0,20).forEach(t => { const span = document.createElement('span'); span.className='tag'; span.dataset.val=t; span.innerHTML=`<span>${escapeHtml(t)}</span><button type="button">✕</button>`; span.querySelector('button').addEventListener('click', ()=>{ span.remove(); syncTagsToState(); }); langBox.insertBefore(span, langInput); } ); }
+      const certBox = $("#certTags"); const certInput = $("#certTagsInput");
+      if(certBox && certInput){ certBox.querySelectorAll(".tag").forEach(t=>t.remove()); (certs||[]).slice(0,20).forEach(t => { const span = document.createElement('span'); span.className='tag'; span.dataset.val=t; span.innerHTML=`<span>${escapeHtml(t)}</span><button type="button">✕</button>`; span.querySelector('button').addEventListener('click', ()=>{ span.remove(); syncTagsToState(); }); certBox.insertBefore(span, certInput); } ); }
+      const skillBox = $("#skillTags"); const skillInput = $("#skillTagsInput");
+      if(skillBox && skillInput){ skillBox.querySelectorAll(".tag").forEach(t=>t.remove()); (skills||[]).slice(0,30).forEach(t => { const span = document.createElement('span'); span.className='tag'; span.dataset.val=t; span.innerHTML=`<span>${escapeHtml(t)}</span><button type="button">✕</button>`; span.querySelector('button').addEventListener('click', ()=>{ span.remove(); syncTagsToState(); }); skillBox.insertBefore(span, skillInput); } ); }
+      syncTagsToState();
+    }catch(e){}
+
+    applyI18N(); renderPreview(); saveDraft(); });
+    $("#cvLang").addEventListener("change", e => { state.cvLang = e.target.value; renderPreview(); });
+    $("#template").addEventListener("change", e => { state.template = e.target.value; $("#preview").className = "preview " + state.template; renderPreview(); });
+
+    ["titleBefore","titleAfter","givenNames","surname","address","email","website","summary","researchInterests","hobbies","social","gdprConsent"].forEach(id => {
+      $("#"+id).addEventListener("input", e => {
+        if(id in state.personal){ state.personal[id] = e.target.value; } else { state[id] = e.target.value; }
+        renderPreview(); saveDraft();
+      });
+    });
+
+    addPhone(""); $("[data-add='phones']").addEventListener("click", () => addPhone(""));
+
+    // Photo
+    const drop = $("#photoDrop"), prev = $("#photoPreview");
+    function setPhoto(src){ state.personal.photo = src; if(src){ prev.src = src; prev.classList.remove("hidden"); } else { prev.classList.add("hidden"); } renderPreview(); saveDraft(); }
+    drop.addEventListener("click", () => { const inp=document.createElement("input"); inp.type="file"; inp.accept="image/*"; inp.onchange=()=>handleFile(inp.files[0]); inp.click(); });
+    drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("dragover");});
+    drop.addEventListener("dragleave", ()=> drop.classList.remove("dragover"));
+    drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("dragover"); const f=e.dataTransfer.files && e.dataTransfer.files[0]; if(f) handleFile(f); });
+    function handleFile(file){ if(!/image\/(png|jpe?g)/i.test(file.type)){ alert("Please provide a PNG/JPG image."); return; } const r=new FileReader(); r.onload=()=>setPhoto(r.result); r.readAsDataURL(file); }
+
+    setupRepeaters();
+  }
+
+  function addPhone(v){
+    const cont = $("#phones"); const item = document.createElement("div"); item.className = "item"; item.draggable = true;
+    item.innerHTML = `<div class="handle" title="drag">↕</div><label>${t("phones")}</label><input type="tel" value="${(v||"").replace(/"/g,'&quot;')}" placeholder="+420 ..."/><button type="button" class="remove">✕</button>`;
+    cont.appendChild(item); makeDraggable(cont);
+    const input = item.querySelector("input"); const remove = item.querySelector(".remove");
+    input.addEventListener("input", () => { state.personal.phones = collectPhones(); renderPreview(); saveDraft(); });
+    remove.addEventListener("click", () => { item.remove(); state.personal.phones = collectPhones(); renderPreview(); saveDraft(); });
+    state.personal.phones = collectPhones();
+  }
+  function collectPhones(){ return $$("#phones .item input").map(i => i.value).filter(Boolean); }
+
+  function setupRepeaters(){
+    $("[data-add='pubs']").addEventListener("click", () => addPublication());
+    $("[data-add='grants']").addEventListener("click", () => addGrant());
+    $("[data-add='jobs']").addEventListener("click", () => addJob());
+    $("[data-add='edu']").addEventListener("click", () => addEdu());
+    $("[data-add='skills']").addEventListener("click", () => addSkill());
+    $("[data-add='langs']").addEventListener("click", () => addLang());
+    $("[data-add='certs']").addEventListener("click", () => addCert());
+    $("[data-add='awards']").addEventListener("click", () => addAward());
+    $("[data-add='refs']").addEventListener("click", () => addRef());
+  }
+
+  function addPublication(p={type:"article", authors:"", title:"", venue:"", year:"", doi:"", note:""}){
+    const cont = $("#pubs"); const item = document.createElement("div"); item.className="item"; item.draggable = true;
+    item.innerHTML = `
+      <div class="handle">↕</div>
+      <div class="grid-4">
+        <div><label>${t("pub_type")}</label><select data-k="type">
+          <option value="book">${t("pub_types.book")}</option>
+          <option value="article">${t("pub_types.article")}</option>
+          <option value="patent">${t("pub_types.patent")}</option>
+          <option value="other">${t("pub_types.other")}</option>
+        </select></div>
+        <div><label>${t("pub_authors")}</label><input data-k="authors" type="text"/></div>
+        <div><label>${t("pub_title")}</label><input data-k="title" type="text"/></div>
+        <div><label>${t("pub_venue")}</label><input data-k="venue" type="text"/></div>
+      </div>
+      <div class="grid-4">
+        <div><label>${t("pub_year")}</label><input data-k="year" type="text" pattern="\\d{4}"/></div>
+        <div><label>${t("pub_doi")}</label><input data-k="doi" type="text"/></div>
+        <div class="grid" style="grid-template-columns:1fr auto; gap:8px;">
+          <div><label>${t("pub_note")}</label><input data-k="note" type="text"/></div>
+          <div><button type="button" class="remove">✕</button></div>
+        </div>
+      </div>`;
+    cont.appendChild(item); makeDraggable(cont);
+    for(const [k,v] of Object.entries(p)){ const el = item.querySelector(`[data-k="${k}"]`); if(el){ if(el.tagName==="SELECT") el.value=v; else el.value=v||""; } }
+    item.addEventListener("input", () => { state.publications = collectPublications(); renderPreview(); saveDraft(); });
+    item.querySelector(".remove").addEventListener("click", () => { item.remove(); state.publications = collectPublications(); renderPreview(); saveDraft(); });
+    state.publications = collectPublications();
+  }
+  function collectPublications(){ return $$("#pubs .item").map(el => ({ type: el.querySelector("[data-k='type']").value, authors: el.querySelector("[data-k='authors']").value, title: el.querySelector("[data-k='title']").value, venue: el.querySelector("[data-k='venue']").value, year: el.querySelector("[data-k='year']").value, doi: el.querySelector("[data-k='doi']").value, note: el.querySelector("[data-k='note']").value })); }
+
+  function addGrant(g={title:"", org:"", role:"", yearFrom:"", yearTo:"", desc:""}){
+    const cont=$("#grants"); const item=document.createElement("div"); item.className="item"; item.draggable=true;
+    item.innerHTML=`
+      <div class="handle">↕</div>
+      <div class="grid">
+        <div><label>Title / Název</label><input data-k="title" type="text"/></div>
+        <div><label>Grantor / Poskytovatel</label><input data-k="org" type="text"/></div>
+        <div><label>Role</label><input data-k="role" type="text"/></div>
+        <div><label>From</label><input data-k="yearFrom" type="text"/></div>
+        <div><label>To</label><input data-k="yearTo" type="text"/></div>
+        <div class="grid" style="grid-template-columns:1fr auto; gap:8px;">
+          <div><label>Note / Popis</label><input data-k="desc" type="text"/></div>
+          <div><button type="button" class="remove">✕</button></div>
+        </div>
+      </div>`;
+    cont.appendChild(item); makeDraggable(cont);
+    for(const [k,v] of Object.entries(g)){ const el=item.querySelector(`[data-k="${k}"]`); if(el) el.value=v||""; }
+    item.addEventListener("input", () => { state.grants = collectGrants(); renderPreview(); saveDraft(); });
+    item.querySelector(".remove").addEventListener("click", () => { item.remove(); state.grants = collectGrants(); renderPreview(); saveDraft(); });
+    state.grants = collectGrants();
+  }
+  function collectGrants(){ return $$("#grants .item").map(el => ({ title: el.querySelector("[data-k='title']").value, org: el.querySelector("[data-k='org']").value, role: el.querySelector("[data-k='role']").value, yearFrom: el.querySelector("[data-k='yearFrom']").value, yearTo: el.querySelector("[data-k='yearTo']").value, desc: el.querySelector("[data-k='desc']").value })); }
+
+  function addJob(j={role:"", company:"", city:"", from:"", to:"", desc:""}){
+    const cont=$("#jobs"); const item=document.createElement("div"); item.className="item"; item.draggable=true;
+    item.innerHTML=`
+      <div class="handle">↕</div>
+      <div class="grid">
+        <div><label>${t("job_role")}</label><input data-k="role" type="text"/></div>
+        <div><label>${t("job_company")}</label><input data-k="company" type="text"/></div>
+        <div><label>${t("job_city")}</label><input data-k="city" type="text"/></div>
+        <div><label>${t("job_from")}</label><input data-k="from" type="month"/></div>
+        <div><label>${t("job_to")}</label><input data-k="to" type="month"/></div>
+        <div class="grid" style="grid-template-columns:1fr auto; gap:8px;">
+          <div><label>${t("job_desc")}</label><input data-k="desc" type="text"/></div>
+          <div><button type="button" class="remove">✕</button></div>
+        </div>
+      </div>`;
+    cont.appendChild(item); makeDraggable(cont);
+    for(const [k,v] of Object.entries(j)){ const el=item.querySelector(`[data-k='${k}']`); if(el) el.value=v||""; }
+    item.addEventListener("input", () => { state.jobs = collectJobs(); renderPreview(); saveDraft(); });
+    item.querySelector(".remove").addEventListener("click", () => { item.remove(); state.jobs = collectJobs(); renderPreview(); saveDraft(); });
+    state.jobs = collectJobs();
+  }
+  function collectJobs(){ return $$("#jobs .item").map(el => ({ role: el.querySelector("[data-k='role']").value, company: el.querySelector("[data-k='company']").value, city: el.querySelector("[data-k='city']").value, from: el.querySelector("[data-k='from']").value, to: el.querySelector("[data-k='to']").value, desc: el.querySelector("[data-k='desc']").value })); }
+
+  function addEdu(d={degree:"", field:"", school:"", city:"", from:"", to:"", thesis:"", supervisor:""}){
+    const cont=$("#edu"); const item=document.createElement("div"); item.className="item"; item.draggable=true;
+    item.innerHTML=`
+      <div class="handle">↕</div>
+      <div class="grid-3">
+        <div><label>${t("edu_degree")}</label><input data-k="degree" type="text"/></div>
+        <div><label>${t("edu_field")}</label><input data-k="field" type="text"/></div>
+        <div><label>${t("edu_school")}</label><input data-k="school" type="text"/></div>
+        <div><label>${t("edu_city")}</label><input data-k="city" type="text"/></div>
+        <div><label>${t("edu_from")}</label><input data-k="from" type="month"/></div>
+        <div><label>${t("edu_to")}</label><input data-k="to" type="month"/></div>
+        <div><label>${t("edu_thesis")}</label><input data-k="thesis" type="text"/></div>
+        <div class="grid" style="grid-template-columns:1fr auto; gap:8px;">
+          <div><label>${t("edu_supervisor")}</label><input data-k="supervisor" type="text"/></div>
+          <div><button type="button" class="remove">✕</button></div>
+        </div>
+      </div>`;
+    cont.appendChild(item); makeDraggable(cont);
+    for(const [k,v] of Object.entries(d)){ const el=item.querySelector(`[data-k='${k}']`); if(el) el.value=v||""; }
+    item.addEventListener("input", () => { state.edu = collectEdu(); renderPreview(); saveDraft(); });
+    item.querySelector(".remove").addEventListener("click", () => { item.remove(); state.edu = collectEdu(); renderPreview(); saveDraft(); });
+    state.edu = collectEdu();
+  }
+  function collectEdu(){ return $$("#edu .item").map(el => ({ degree: el.querySelector("[data-k='degree']").value, field: el.querySelector("[data-k='field']").value, school: el.querySelector("[data-k='school']").value, city: el.querySelector("[data-k='city']").value, from: el.querySelector("[data-k='from']").value, to: el.querySelector("[data-k='to']").value, thesis: el.querySelector("[data-k='thesis']").value, supervisor: el.querySelector("[data-k='supervisor']").value })); }
+
+  function addSkill(s={name:"", level:3}){
+    const cont=$("#skills"); const item=document.createElement("div"); item.className="item"; item.draggable=true;
+    item.innerHTML=`
+      <div class="handle">↕</div>
+      <div class="grid">
+        <div><label>${t("skill_name")}</label><input data-k="name" type="text"/></div>
+        <div><label>${t("skill_level")}</label><input data-k="level" type="number" min="1" max="5" value="3"/></div>
+        <div><button type="button" class="remove">✕</button></div>
+      </div>`;
+    cont.appendChild(item); makeDraggable(cont);
+    item.querySelector("[data-k='name']").value = s.name || "";
+    item.querySelector("[data-k='level']").value = s.level || 3;
+    item.addEventListener("input", () => { state.skills = collectSkills(); renderPreview(); saveDraft(); });
+    item.querySelector(".remove").addEventListener("click", () => { item.remove(); state.skills = collectSkills(); renderPreview(); saveDraft(); });
+    state.skills = collectSkills();
+  }
+  function collectSkills(){ return $$("#skills .item").map(el => ({ name: el.querySelector("[data-k='name']").value, level: +el.querySelector("[data-k='level']").value || 0 })); }
+
+  function addLang(l={name:"", level:"B2"}){
+    const cont=$("#langs"); const item=document.createElement("div"); item.className="item"; item.draggable=true;
+    item.innerHTML=`
+      <div class="handle">↕</div>
+      <div class="grid">
+        <div><label>${t("lang_name")}</label><input data-k="name" type="text"/></div>
+        <div><label>${t("lang_level")}</label><input data-k="level" type="text" placeholder="A1–C2 / native"/></div>
+        <div><button type="button" class="remove">✕</button></div>
+      </div>`;
+    cont.appendChild(item); makeDraggable(cont);
+    item.querySelector("[data-k='name']").value = l.name || "";
+    item.querySelector("[data-k='level']").value = l.level || "";
+    item.addEventListener("input", () => { state.langs = collectLangs(); renderPreview(); saveDraft(); });
+    item.querySelector(".remove").addEventListener("click", () => { item.remove(); state.langs = collectLangs(); renderPreview(); saveDraft(); });
+    state.langs = collectLangs();
+  }
+  function collectLangs(){ return $$("#langs .item").map(el => ({ name: el.querySelector("[data-k='name']").value, level: el.querySelector("[data-k='level']").value })); }
+
+  function addCert(c={name:"", org:"", year:""}){
+    const cont=$("#certs"); const item=document.createElement("div"); item.className="item"; item.draggable=true;
+    item.innerHTML=`
+      <div class="handle">↕</div>
+      <div class="grid">
+        <div><label>${t("cert_name")}</label><input data-k="name" type="text"/></div>
+        <div><label>${t("cert_org")}</label><input data-k="org" type="text"/></div>
+        <div><label>${t("cert_year")}</label><input data-k="year" type="text" pattern="\\d{4}"/></div>
+        <div><button type="button" class="remove">✕</button></div>
+      </div>`;
+    cont.appendChild(item); makeDraggable(cont);
+    for(const [k,v] of Object.entries(c)){ const el=item.querySelector(`[data-k='${k}']`); if(el) el.value=v||""; }
+    item.addEventListener("input", () => { state.certs = collectCerts(); renderPreview(); saveDraft(); });
+    item.querySelector(".remove").addEventListener("click", () => { item.remove(); state.certs = collectCerts(); renderPreview(); saveDraft(); });
+    state.certs = collectCerts();
+  }
+  function collectCerts(){ return $$("#certs .item").map(el => ({ name: el.querySelector("[data-k='name']").value, org: el.querySelector("[data-k='org']").value, year: el.querySelector("[data-k='year']").value })); }
+
+  function addAward(a={name:"", org:"", year:""}){
+    const cont=$("#awards"); const item=document.createElement("div"); item.className="item"; item.draggable=true;
+    item.innerHTML=`
+      <div class="handle">↕</div>
+      <div class="grid">
+        <div><label>${t("award_name")}</label><input data-k="name" type="text"/></div>
+        <div><label>${t("award_org")}</label><input data-k="org" type="text"/></div>
+        <div><label>${t("award_year")}</label><input data-k="year" type="text" pattern="\\d{4}"/></div>
+        <div><button type="button" class="remove">✕</button></div>
+      </div>`;
+    cont.appendChild(item); makeDraggable(cont);
+    for(const [k,v] of Object.entries(a)){ const el=item.querySelector(`[data-k='${k}']`); if(el) el.value=v||""; }
+    item.addEventListener("input", () => { state.awards = collectAwards(); renderPreview(); saveDraft(); });
+    item.querySelector(".remove").addEventListener("click", () => { item.remove(); state.awards = collectAwards(); renderPreview(); saveDraft(); });
+    state.awards = collectAwards();
+  }
+  function collectAwards(){ return $$("#awards .item").map(el => ({ name: el.querySelector("[data-k='name']").value, org: el.querySelector("[data-k='org']").value, year: el.querySelector("[data-k='year']").value })); }
+
+  function addRef(r={name:"", contact:""}){
+    const cont=$("#refs"); const item=document.createElement("div"); item.className="item"; item.draggable=true;
+    item.innerHTML=`
+      <div class="handle">↕</div>
+      <div class="grid">
+        <div><label>${t("ref_name")}</label><input data-k="name" type="text"/></div>
+        <div><label>${t("ref_contact")}</label><input data-k="contact" type="text"/></div>
+        <div><button type="button" class="remove">✕</button></div>
+      </div>`;
+    cont.appendChild(item); makeDraggable(cont);
+    for(const [k,v] of Object.entries(r)){ const el=item.querySelector(`[data-k='${k}']`); if(el) el.value=v||""; }
+    item.addEventListener("input", () => { state.refs = collectRefs(); renderPreview(); saveDraft(); });
+    item.querySelector(".remove").addEventListener("click", () => { item.remove(); state.refs = collectRefs(); renderPreview(); saveDraft(); });
+    state.refs = collectRefs();
+  }
+  function collectRefs(){ return $$("#refs .item").map(el => ({ name: el.querySelector("[data-k='name']").value, contact: el.querySelector("[data-k='contact']").value })); }
+
+  function makeDraggable(container){
+    let dragging = null;
+    container.addEventListener("dragstart", e => { const t=e.target.closest(".item"); if(!t) return; dragging=t; t.classList.add("dragging"); e.dataTransfer.effectAllowed="move"; });
+    container.addEventListener("dragend", () => { if(dragging) dragging.classList.remove("dragging"); dragging=null; updateFromContainer(container); renderPreview(); saveDraft(); });
+    container.addEventListener("dragover", e => {
+      e.preventDefault();
+      const afterElement = getDragAfterElement(container, e.clientY);
+      const draggable = container.querySelector(".dragging");
+      if(!draggable) return;
+      if(afterElement == null){ container.appendChild(draggable); } else { container.insertBefore(draggable, afterElement); }
+    });
+    function getDragAfterElement(container, y){
+      const items=[...container.querySelectorAll(".item:not(.dragging)")];
+      return items.reduce((closest, child)=>{ const box=child.getBoundingClientRect(); const offset=y - box.top - box.height/2; if(offset<0 && offset>closest.offset){ return {offset, element:child}; } else { return closest; } }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+    function updateFromContainer(container){
+      switch(container.id){
+        case "phones": state.personal.phones = collectPhones(); break;
+        case "pubs": state.publications = collectPublications(); break;
+        case "grants": state.grants = collectGrants(); break;
+        case "jobs": state.jobs = collectJobs(); break;
+        case "edu": state.edu = collectEdu(); break;
+        case "skills": state.skills = collectSkills(); break;
+        case "langs": state.langs = collectLangs(); break;
+        case "certs": state.certs = collectCerts(); break;
+        case "awards": state.awards = collectAwards(); break;
+        case "refs": state.refs = collectRefs(); break;
+      }
+    }
+  }
+
+  function renderPreview(){
+    const L = I18N[state.cvLang || "cs"];
+    const p = state.personal;
+    const fullName = [p.titleBefore, p.givenNames, p.surname, p.titleAfter].filter(Boolean).join(" ").trim();
+    const phonesStr = (p.phones || []).join(" • ");
+    const skillsChips = (state.skills||[]).map(s => `<span class="chip">${escapeHtml(s.name)} ${"★".repeat(Math.max(0,Math.min(5, +s.level||0)))}</span>`).join("");
+    const interestsChips = (state.hobbies||"").split(",").map(s=>s.trim()).filter(Boolean).map(s=>`<span class="chip">${escapeHtml(s)}</span>`).join("");
+    const researchChips = (state.researchInterests||"").split(",").map(s=>s.trim()).filter(Boolean).map(s=>`<span class="chip">${escapeHtml(s)}</span>`).join("");
+
+    const pubs = state.publications || [];
+    const books = pubs.filter(x => x.type === "book");
+    const articles = pubs.filter(x => x.type === "article");
+    const patents = pubs.filter(x => x.type === "patent");
+    const others = pubs.filter(x => x.type === "other");
+
+    const photoBlock = p.photo ? `<div><img src="${p.photo}" alt="photo" style="width:38mm; height:38mm; object-fit:cover; border-radius:10px; border:1px solid #e5e7eb;"/></div>` : "";
+
+    const headBlock = `
+      <div class="cv-head">
+        <div class="name cv-accent">${escapeHtml(fullName || "—")}</div>
+        <div class="subtitle">${escapeHtml(state.summary || "")}</div>
+        <div class="cv-meta">
+          ${escapeHtml(p.address || "")} ${p.address && (p.email || p.website || phonesStr) ? "•" : ""}
+          ${escapeHtml(p.email || "")} ${p.email && (p.website || phonesStr) ? "•" : ""}
+          ${escapeHtml(p.website || "")} ${p.website && phonesStr ? "•" : ""}
+          ${escapeHtml(phonesStr)}
+        </div>
+      </div>`;
+
+    const contactsBlock = `
+      <div class="cv-section">
+        <h3>${L.h_contacts}</h3>
+        <div class="cv-list">
+          ${p.address ? `<div>${escapeHtml(p.address)}</div>`:""}
+          ${p.email ? `<div>${escapeHtml(p.email)}</div>`:""}
+          ${p.website ? `<div>${escapeHtml(p.website)}</div>`:""}
+          ${phonesStr ? `<div>${escapeHtml(phonesStr)}</div>`:""}
+          ${state.social ? `<div><strong>${L.h_social}:</strong> ${escapeHtml(state.social)}</div>`:""}
+        </div>
+      </div>`;
+
+    const profBlock = state.summary ? `<div class="cv-section"><h3>${L.h_profile}</h3><div>${escapeHtml(state.summary)}</div></div>` : "";
+    const researchBlock = state.researchInterests ? `<div class="cv-section"><h3>${L.h_research_interests}</h3><div>${researchChips || "—"}</div></div>` : "";
+
+    function renderListSection(title, arr, mapFn){
+      if(!arr || !arr.length) return "";
+      const items = arr.map(mapFn).join("");
+      return `<div class="cv-section"><h3>${title}</h3><div class="cv-list">${items}</div></div>`;
+    }
+
+    const jobsBlock = renderListSection(L.h_experience, state.jobs, j => {
+      const dates = [fmtMonth(j.from), fmtMonth(j.to)].filter(Boolean).join(" — ");
+      const meta = [j.company, j.city, dates].filter(Boolean).join(" • ");
+      return `<div><div class="cv-item-title">${escapeHtml(j.role || "")}</div><div class="cv-meta">${escapeHtml(meta)}</div><div>${escapeHtml(j.desc||"")}</div></div>`;
+    });
+    const eduBlock = renderListSection(L.h_education, state.edu, d => {
+      const dates = [fmtMonth(d.from), fmtMonth(d.to)].filter(Boolean).join(" — ");
+      const meta = [d.school, d.city, dates].filter(Boolean).join(" • ");
+      const extra = [d.thesis, d.supervisor].filter(Boolean).join(" • ");
+      return `<div><div class="cv-item-title">${escapeHtml(d.degree || "")} ${d.field ? "— " + escapeHtml(d.field) : ""}</div><div class="cv-meta">${escapeHtml(meta)}</div><div>${escapeHtml(extra)}</div></div>`;
+    });
+    const pubsBooksBlock    = renderListSection(L.h_books, books, p => pubLine(p));
+    const pubsArticlesBlock = renderListSection(L.h_articles, articles, p => pubLine(p));
+    const pubsPatentsBlock  = renderListSection(L.h_patents, patents, p => pubLine(p));
+    const pubsOtherBlock    = renderListSection(L.h_publications, others, p => pubLine(p));
+    const grantsBlock = renderListSection(L.h_projects, state.grants, g => {
+      const dates = [g.yearFrom, g.yearTo].filter(Boolean).join(" — ");
+      const meta = [g.org, g.role, dates].filter(Boolean).join(" • ");
+      return `<div><div class="cv-item-title">${escapeHtml(g.title || "")}</div><div class="cv-meta">${escapeHtml(meta)}</div><div>${escapeHtml(g.desc||"")}</div></div>`;
+    });
+    const skillsBlock = renderListSection(L.h_skills, state.skills, s => `<div>${escapeHtml(s.name)} ${"★".repeat(Math.max(0,Math.min(5, +s.level||0)))}</div>`);
+    const langsBlock  = renderListSection(L.h_languages, state.langs, l => `<div>${escapeHtml(l.name)} — <span class="cv-meta">${escapeHtml(l.level||"")}</span></div>`);
+    const certsBlock  = renderListSection(L.h_certs, state.certs, c => `<div>${escapeHtml(c.name)} — <span class="cv-meta">${escapeHtml([c.org, c.year].filter(Boolean).join(" • "))}</span></div>`);
+    const awardsBlock = renderListSection(L.h_awards, state.awards, a => `<div>${escapeHtml(a.name)} — <span class="cv-meta">${escapeHtml([a.org, a.year].filter(Boolean).join(" • "))}</span></div>`);
+    const refsBlock   = renderListSection(L.h_references, state.refs, r => `<div>${escapeHtml(r.name)} — <span class="cv-meta">${escapeHtml(r.contact||"")}</span></div>`);
+    const interestsBlock = (state.hobbies||"").trim() ? `<div class="cv-section"><h3>${L.h_interests}</h3><div>${interestsChips}</div></div>` : "";
+
+    $("#preview").className = "preview " + state.template;
+
+    $("#cvPage").innerHTML = `
+      <div class="cv-two-col">
+        <div>
+          ${photoBlock}
+          ${contactsBlock}
+          ${skillsBlock}
+          ${langsBlock}
+          ${certsBlock}
+          ${awardsBlock}
+          ${interestsBlock}
+        </div>
+        <div>
+          ${headBlock}
+          ${profBlock}
+          ${researchBlock}
+          ${jobsBlock}
+          ${eduBlock}
+          ${pubsBooksBlock}
+          ${pubsArticlesBlock}
+          ${pubsPatentsBlock}
+          ${pubsOtherBlock}
+          ${grantsBlock}
+          ${refsBlock}
+        </div>
+      </div>`;
+  }
+
+  function pubLine(p){
+    const pieces=[p.authors, p.title, p.venue, p.year, p.doi].filter(Boolean);
+    const extra=p.note ? ` — <span class="cv-meta">${escapeHtml(p.note)}</span>` : "";
+    return `<div>${escapeHtml(pieces.join(". "))}${extra}</div>`;
+  }
+  function fmtMonth(m){ if(!m) return ""; const [y,mo]=m.split("-"); return `${mo}.${y}`; }
+  function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  async function saveAndDownload(){
+    const ok = confirm(state.uiLang==="cs" ? "PDF bude vygenerováno a data se neveřejně uloží pod klíčem. Pokračovat?" : "PDF will be generated and data stored privately under a key. Continue?");
+    if(!ok) return;
+    const payload = buildPayload();
+    const qp = state.key ? ("?key=" + encodeURIComponent(state.key)) : "";
+    try{
+      const res = await fetch(ENDPOINT_SAVE + qp, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if(!data || !data.ok){ throw new Error(data && data.error ? data.error : "Save failed"); }
+      state.key = data.key; sessionStorage.setItem("pb_cv_key", state.key);
+      $("#generatedKey").textContent = data.key; $("#keyOverlay").classList.remove("hidden");
+      await generatePDF();
+    }catch(err){ alert("Save error: " + (err.message || String(err))); }
+  }
+
+  function buildPayload(){
+    const now = new Date().toISOString();
+    return {
+      app:"PB CV Generator", version: APP_VERSION, saved_at: now, ui_language: state.uiLang, cv_language: state.cvLang, template: state.template,
+      personal: state.personal, summary: state.summary, researchInterests: state.researchInterests, publications: state.publications, grants: state.grants, jobs: state.jobs, edu: state.edu,
+      skills: state.skills, languages: state.langs, certificates: state.certs, awards: state.awards, references: state.refs, hobbies: state.hobbies, social: state.social, gdprConsent: state.gdprConsent,
+      author: "PB (c) 2025", warning_cs: state.meta.notice_cs, warning_en: state.meta.notice_en,
+      edit_key: state.key || null
+    };
+  }
+
+  async function generatePDF(){
+    await ensureLibsLoaded();
+    const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : (window.jsPDF || null);
+    if(!jsPDFCtor){ alert("jsPDF library failed to load."); return; }
+    const page = $("#cvPage");
+    const a4w = 210, a4h = 297; const margin = 6;
+    const darkBg = (state.template === "template-night") ? "#0f172a" : "#ffffff";
+
+    const scale = 2;
+    const canvas = await html2canvas(page, { scale, backgroundColor: darkBg });
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDFCtor({orientation:"p", unit:"mm", format:"a4"});
+
+    const pxPerMM = canvas.width / (a4w - 2*margin);
+    const pageHeightPx = (a4h - 2*margin) * pxPerMM;
+    let rendered = 0; let pageIndex = 0;
+
+    while(rendered < canvas.height){
+      const sliceCanvas = document.createElement("canvas");
+      sliceCanvas.width = canvas.width;
+      const sliceHeight = Math.min(pageHeightPx, canvas.height - rendered);
+      sliceCanvas.height = sliceHeight;
+      const ctx = sliceCanvas.getContext("2d");
+      ctx.drawImage(canvas, 0, rendered, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+      const sliceData = sliceCanvas.toDataURL("image/png");
+      if(pageIndex>0) pdf.addPage();
+      const targetW = a4w - 2*margin;
+      const targetH = targetW * (sliceHeight/canvas.width);
+      pdf.addImage(sliceData, "PNG", margin, margin, targetW, targetH);
+      rendered += sliceHeight; pageIndex++;
+    }
+    const fileName = (state.personal.surname || "cv") + "_" + (state.cvLang || "cs") + ".pdf";
+    pdf.save(fileName);
+  }
+
+  function showLock(){ $("#lockOverlay").classList.remove("hidden"); }
+  function hideLock(){ $("#lockOverlay").classList.add("hidden"); }
+
+  async function loadByKey(key){
+    try{
+      const res = await fetch(ENDPOINT_LOAD + encodeURIComponent(key));
+      if(!res.ok) throw new Error("Load failed");
+      const data = await res.json();
+      hydrateFromData(data);
+      state.key = key; sessionStorage.setItem("pb_cv_key", key);
+      hideLock();
+    }catch(err){ alert("Invalid key or load error."); }
+  }
+
+  function hydrateFromData(data){
+    state.uiLang = data.ui_language || "cs"; $("#uiLang").value = state.uiLang;
+    state.cvLang = data.cv_language || "cs"; $("#cvLang").value = state.cvLang;
+    state.template = data.template || "template-classic"; $("#template").value = state.template; $("#preview").className = "preview " + state.template;
+
+    Object.assign(state.personal, data.personal || {});
+    ["titleBefore","titleAfter","givenNames","surname","address","email","website"].forEach(id => { $("#"+id).value = state.personal[id] || ""; });
+    if(state.personal.photo){ $("#photoPreview").src = state.personal.photo; $("#photoPreview").classList.remove("hidden"); }
+
+    state.summary = data.summary || ""; $("#summary").value = state.summary;
+    state.researchInterests = data.researchInterests || ""; $("#researchInterests").value = state.researchInterests;
+    state.hobbies = data.hobbies || ""; $("#hobbies").value = state.hobbies;
+    state.social = data.social || ""; $("#social").value = state.social;
+    state.gdprConsent = data.gdprConsent || state.gdprConsent; $("#gdprConsent").value = state.gdprConsent;
+
+    $("#phones").innerHTML = ""; (state.personal.phones||[]).forEach(addPhone);
+    $("#pubs").innerHTML = ""; (data.publications||[]).forEach(addPublication);
+    $("#grants").innerHTML = ""; (data.grants||[]).forEach(addGrant);
+    $("#jobs").innerHTML = ""; (data.jobs||[]).forEach(addJob);
+    $("#edu").innerHTML = ""; (data.edu||[]).forEach(addEdu);
+    $("#skills").innerHTML = ""; (data.skills||[]).forEach(addSkill);
+    $("#langs").innerHTML = ""; (data.languages||[]).forEach(addLang);
+    $("#certs").innerHTML = ""; (data.certificates||[]).forEach(addCert);
+    $("#awards").innerHTML = ""; (data.awards||[]).forEach(addAward);
+    $("#refs").innerHTML = ""; (data.references||[]).forEach(addRef);
+
+    
+    // Prefill tag boxes from loaded data (names only)
+    try{
+      const langs = (data.languages||[]).map(x => x && x.name).filter(Boolean);
+      const certs = (data.certificates||[]).map(x => x && x.name).filter(Boolean);
+      const skills = (data.skills||[]).map(x => (x && x.name ? (x.name + (x.level ? (" " + x.level) : "")) : null)).filter(Boolean);
+      const langBox = $("#langTags"); const langInput = $("#langTagsInput");
+      if(langBox && langInput){ langBox.querySelectorAll(".tag").forEach(t=>t.remove()); (langs||[]).slice(0,20).forEach(t => { const span = document.createElement('span'); span.className='tag'; span.dataset.val=t; span.innerHTML=`<span>${escapeHtml(t)}</span><button type="button">✕</button>`; span.querySelector('button').addEventListener('click', ()=>{ span.remove(); syncTagsToState(); }); langBox.insertBefore(span, langInput); } ); }
+      const certBox = $("#certTags"); const certInput = $("#certTagsInput");
+      if(certBox && certInput){ certBox.querySelectorAll(".tag").forEach(t=>t.remove()); (certs||[]).slice(0,20).forEach(t => { const span = document.createElement('span'); span.className='tag'; span.dataset.val=t; span.innerHTML=`<span>${escapeHtml(t)}</span><button type="button">✕</button>`; span.querySelector('button').addEventListener('click', ()=>{ span.remove(); syncTagsToState(); }); certBox.insertBefore(span, certInput); } ); }
+      const skillBox = $("#skillTags"); const skillInput = $("#skillTagsInput");
+      if(skillBox && skillInput){ skillBox.querySelectorAll(".tag").forEach(t=>t.remove()); (skills||[]).slice(0,30).forEach(t => { const span = document.createElement('span'); span.className='tag'; span.dataset.val=t; span.innerHTML=`<span>${escapeHtml(t)}</span><button type="button">✕</button>`; span.querySelector('button').addEventListener('click', ()=>{ span.remove(); syncTagsToState(); }); skillBox.insertBefore(span, skillInput); } ); }
+      syncTagsToState();
+    }catch(e){}
+
+    applyI18N(); renderPreview(); saveDraft();
+  }
+
+  function saveDraft(){ try{ localStorage.setItem("pb_cv_draft", JSON.stringify(state)); }catch(e){} }
+  function restoreDraft(){
+    try{
+      const draft = localStorage.getItem("pb_cv_draft");
+      if(draft){
+        const data = JSON.parse(draft);
+        hydrateFromData({ ui_language: data.uiLang, cv_language: data.cvLang, template: data.template, personal: data.personal, summary: data.summary, researchInterests: data.researchInterests, publications: data.publications, grants: data.grants, jobs: data.jobs, edu: data.edu, skills: data.skills, languages: data.langs, certificates: data.certs, awards: data.awards, references: data.refs, hobbies: data.hobbies, social: data.social, gdprConsent: data.gdprConsent });
+      }else{
+        addJob(); addEdu(); addPublication(); addSkill(); addLang();
+      }
+    }catch(e){
+      addJob(); addEdu(); addPublication(); addSkill(); addLang();
+    }
+  }
+
+  function wireButtons(){
+    $("#btnDownload").addEventListener("click", saveAndDownload);
+    $("#btnNew").addEventListener("click", () => { Object.keys(localStorage).forEach(k => { if(k.startsWith("pb_cv")) localStorage.removeItem(k); }); sessionStorage.removeItem("pb_cv_key"); window.location.reload(); });
+    $("#btnUnlock").addEventListener("click", showLock);
+    $("#btnLoadByKey").addEventListener("click", () => { const k = $("#editKeyInput").value.trim(); if(k) loadByKey(k); });
+    $("#btnStartNew").addEventListener("click", () => { hideLock(); });
+    $("#btnCloseKey").addEventListener("click", () => { $("#keyOverlay").classList.add("hidden"); });
+  }
+
+  (function init(){
+    bindBasicInputs(); wireButtons(); applyI18N(); restoreDraft();
+    const url = new URL(location.href);
+    const keyParam = url.searchParams.get("key") || sessionStorage.getItem("pb_cv_key") || "";
+    if(keyParam){ loadByKey(keyParam).catch(()=>{}); }
+    renderPreview();
+  })();
+</script>
+<script>
+
+/* === PB custom JS additions === */
+
+const SUGG_LANGS = {cs:["Čeština C2","Angličtina C1","Angličtina B2","Němčina B1","Němčina C1","Francouzština B2","Španělština B1","Italština A2","Ruština B1"], en:["Czech C2","English C1","English B2","German B1","German C1","French B2","Spanish B1","Italian A2","Russian B1"]};
+const SUGG_CERTS = {cs:["Řidičák B (auto)","Řidičák A (motorka)","Řidičák C (kamion)","Řidičák D (autobus)","Pilotní průkaz","Jachtařská licence","Průkaz vůdce malého plavidla","Strojvedoucí","Jeřábník"], en:["Driving license B (car)","Driving license A (motorbike)","Driving license C (truck)","Driving license D (bus)","Pilot license","Yachtmaster license","Small vessel operator license","Train driver","Crane operator"]};
+const SUGG_SKILLS = {cs:["MS Excel ★★★","PowerPoint ★★★","Word ★★★★","Python ★★★★","R ★★★","SQL ★★★★","HTML/CSS ★★★","JavaScript ★★★","Project management ★★★","Komunikace ★★★★","Analytické myšlení ★★★★"], en:["MS Excel ★★★","PowerPoint ★★★","Word ★★★★","Python ★★★★","R ★★★","SQL ★★★★","HTML/CSS ★★★","JavaScript ★★★","Project management ★★★","Communication ★★★★","Analytical thinking ★★★★"]};
+
+function initSuggestions(){
+  function makeChip(text){
+    const chip = document.createElement("div");
+    chip.className = "suggestion"; chip.textContent = text; chip.draggable = true;
+    chip.addEventListener("dragstart", e => { e.dataTransfer.setData("text/plain", text); });
+    return chip;
+  }
+  const lang = (state && state.uiLang) || "cs";
+  const langWrap = $("#langSuggestions"); if(langWrap){ langWrap.innerHTML=""; (SUGG_LANGS[lang]||[]).forEach(t => langWrap.appendChild(makeChip(t))); }
+  const certWrap = $("#certSuggestions"); if(certWrap){ certWrap.innerHTML=""; (SUGG_CERTS[lang]||[]).forEach(t => certWrap.appendChild(makeChip(t))); }
+  const skillWrap = $("#skillSuggestions"); if(skillWrap){ skillWrap.innerHTML=""; (SUGG_SKILLS[lang]||[]).forEach(t => skillWrap.appendChild(makeChip(t))); }
+}
+
+function initTagsInput(containerId, inputId, onChange){
+  const box = $("#"+containerId); const input = $("#"+inputId);
+  if(!box || !input) return;
+
+  function addTag(text){
+    const t = (text||"").trim(); if(!t) return;
+    const exists = Array.from(box.querySelectorAll(".tag")).some(el => el.dataset.val === t);
+    if(exists) { input.value=""; return; }
+    const tag = document.createElement("span");
+    tag.className = "tag"; tag.dataset.val = t;
+    tag.innerHTML = `<span>${escapeHtml(t)}</span><button type="button" aria-label="remove">✕</button>`;
+    tag.querySelector("button").addEventListener("click", () => { tag.remove(); onChange && onChange(); });
+    box.insertBefore(tag, input);
+    input.value = ""; onChange && onChange();
+  }
+
+  // Typing: comma or Enter creates a tag
+  input.addEventListener("keydown", e => {
+    if(e.key === "Enter" || e.key === ","){
+      e.preventDefault();
+      const val = input.value.replace(/,$/, "");
+      addTag(val);
+    }else if(e.key === "Backspace" && !input.value){
+      const last = box.querySelector(".tag:last-of-type"); if(last){ last.remove(); onChange && onChange(); }
+    }
+  });
+
+  // Drop suggestion onto input area
+  ["dragover","drop"].forEach(evt => box.addEventListener(evt, e => {
+    if(evt==="dragover"){ e.preventDefault(); return; }
+    e.preventDefault(); const data = e.dataTransfer.getData("text/plain"); if(data) addTag(data);
+  }));
+
+  // Convenience: clicking container focuses input
+  box.addEventListener("click", () => input.focus());
+
+  return { addTag, box, input };
+}
+
+function readTags(containerId){
+  const box = $("#"+containerId); if(!box) return [];
+  return Array.from(box.querySelectorAll(".tag")).map(t => t.dataset.val || t.textContent.trim()).filter(Boolean);
+}
+
+function parseStars(str){
+  const starCount = (str.match(/★/g)||[]).length || (str.match(/\*/g)||[]).length;
+  const numMatch = str.match(/(?:^|\s)([1-5])(?:\s|$)/);
+  return Math.max(0, Math.min(5, numMatch ? parseInt(numMatch[1],10) : (starCount || 0)));
+}
+function cleanName(str){
+  return (str||"").replace(/[★*]/g,"").replace(/\b[1-5]\b/,"").replace(/\s{2,}/g," ").trim();
+}
+function syncTagsToState(){
+  // Merge tags into state arrays, de-duplicated by "name"
+  const langTags = readTags("langTags");
+  const certTags = readTags("certTags");
+  const fromRepeaterLangs = (state.langs||[]);
+  const fromRepeaterCerts = (state.certs||[]);
+  const fromRepeaterSkills = (state.skills||[]);
+
+  function dedupByName(arr){
+    const seen=new Set(); return arr.filter(x => { const k=(x.name||"").toLowerCase(); if(!k || seen.has(k)) return false; seen.add(k); return true; });
+  }
+
+  const tagLangObjs = langTags.map(t => ({name:t, level:""}));
+  const tagCertObjs = certTags.map(t => ({name:t, org:"", year:""}));
+  const skillTags = readTags("skillTags");
+  const tagSkillObjs = skillTags.map(t => ({name: cleanName(t), level: parseStars(t) || 3}));
+
+  state.langs = dedupByName([...fromRepeaterLangs, ...tagLangObjs]);
+  state.certs = dedupByName([...fromRepeaterCerts, ...tagCertObjs]);
+  state.skills = dedupByName([...fromRepeaterSkills, ...tagSkillObjs]);
+}
+
+function initZoom(){
+  const sel = $("#previewZoom"); if(!sel) return;
+  function apply(){ const z = parseFloat(sel.value||"1") || 1; $("#preview").style.setProperty("--preview-zoom", z); $("#statusText").textContent = "Preview • A4 • " + Math.round(z*100) + "%"; }
+  sel.value = "0.8";
+  sel.addEventListener("change", apply); apply();
+}
+
+function mmToPx(mm){
+  const div = document.createElement("div"); div.style.width = mm + "mm"; div.style.position="absolute"; div.style.visibility="hidden"; document.body.appendChild(div);
+  const px = div.getBoundingClientRect().width; div.remove(); return px;
+}
+
+function ensureA4Fit(){
+  const page = $("#cvPage"); if(!page) return;
+  // Reset any scaling on font
+  page.style.setProperty("--font-scale", "1");
+  // Target height in px
+  const targetH = mmToPx(297) - 2*mmToPx(0); // margins already internal
+  let scale = 1;
+  let guard = 0;
+  while(page.scrollHeight > targetH && scale > 0.75 && guard < 25){
+    scale -= 0.02; guard++;
+    page.style.setProperty("--font-scale", String(scale));
+  }
+}
+
+function enhancePhotoCropping(){
+  // Allow moving object-position by dragging over photoPreview
+  const prev = $("#photoPreview"); if(!prev) return;
+  let pos = {x:50, y:50}; let dragging=false, start=null;
+  function apply(){ prev.style.objectPosition = pos.x + "% " + pos.y + "%"; if(state.personal && state.personal.photoPos){ state.personal.photoPos = pos; } }
+  prev.addEventListener("mousedown", e => { dragging=true; start={x:e.clientX, y:e.clientY}; });
+  window.addEventListener("mouseup", ()=> dragging=false);
+  window.addEventListener("mousemove", e => {
+    if(!dragging) return;
+    const dx = e.clientX - start.x, dy = e.clientY - start.y;
+    start = {x:e.clientX, y:e.clientY};
+    pos.x = Math.max(0, Math.min(100, pos.x + dx/2));
+    pos.y = Math.max(0, Math.min(100, pos.y + dy/2));
+    apply();
+  });
+  apply();
+}
+
+// Hook into existing lifecycle
+const _origRenderPreview = renderPreview;
+renderPreview = function(){
+  // Keep state in sync with tag boxes
+  syncTagsToState();
+  _origRenderPreview();
+  ensureA4Fit();
+};
+
+// Init after DOM ready: extend existing init (bindBasicInputs called somewhere onload)
+document.addEventListener("DOMContentLoaded", () => {
+  const uiSel = document.getElementById('uiLang'); if(uiSel){ uiSel.addEventListener('change', () => { initSuggestions(); }); }
+  initSuggestions();
+  initTagsInput("langTags","langTagsInput", () => { syncTagsToState(); renderPreview(); saveDraft(); });
+  initTagsInput("certTags","certTagsInput", () => { syncTagsToState(); renderPreview(); saveDraft(); });
+  initZoom();
+  enhancePhotoCropping();
+});
+
+// Before PDF export, ensure fit
+const _origGeneratePDF = generatePDF;
+generatePDF = async function(){
+  ensureA4Fit();
+  await _origGeneratePDF();
+};
+
+</script>
+</body>

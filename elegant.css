@@ -1,0 +1,5 @@
+/* Template B (Elegant light) */
+    .template-elegant .cv-page{ background:linear-gradient(180deg, #ffffff 0%, #f7fbff 100%); }
+    .template-elegant .cv-head{ border-radius:12px; padding:12px 12px; background:#eef2ff; border:1px solid #e5e7eb; margin-bottom:10px; }
+    .template-elegant .name{ color:#0f172a; }
+    .template-elegant .cv-section h3{ border-color:#dbeafe; }
